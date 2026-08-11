@@ -1,12 +1,12 @@
 # speak-ci
 
-This repository is a thin GitHub Actions caller for the private `jkfollansbee/speak` repository.
+This repository runs GitHub Actions for the private `jkfollansbee/speak` repository while keeping the CI repository public.
 
 ## Workflow
 
-The workflow at `.github/workflows/speak-private-ci.yml` calls the reusable workflow published by `jkfollansbee/speak` and asks it to:
+The workflow at `.github/workflows/speak-private-ci.yml` contains the copied `jkfollansbee/speak` test, build, and publish jobs and asks them to:
 
-- check out `jkfollansbee/speak`
+- check out `jkfollansbee/speak` with `SPEAK_REPO_TOKEN`
 - run the test matrix
 - build the API and web images
 - optionally publish the images back to `ghcr.io/jkfollansbee/speak`
@@ -19,8 +19,7 @@ Automatic behavior:
 
 ## Required Setup
 
-1. In `jkfollansbee/speak`, keep the Actions access policy set to `Accessible from repositories owned by the user 'jkfollansbee'`.
-2. In this repository, add an Actions secret named `SPEAK_REPO_TOKEN`.
-3. Use a token that can read the private `jkfollansbee/speak` repository and push packages to `ghcr.io/jkfollansbee/speak`.
+1. In this repository, add an Actions secret named `SPEAK_REPO_TOKEN`.
+2. Use a token that can read the private `jkfollansbee/speak` repository and push packages to `ghcr.io/jkfollansbee/speak`.
 
-Without `SPEAK_REPO_TOKEN`, the called workflow can be loaded from `jkfollansbee/speak`, but the jobs in this repo cannot check out the private source tree or publish images back to the private package namespace.
+Without `SPEAK_REPO_TOKEN`, the workflow can start in this public repo, but every job that checks out the private source tree will fail.
