@@ -117,6 +117,8 @@ jobs:
             specs: tests/music-page.e2e.spec.ts tests/graphic-book-workspace.e2e.spec.ts
           - name: memory
             specs: tests/memory-workspace.e2e.spec.ts
+          - name: memos
+            specs: tests/memos-page.e2e.spec.ts
     defaults:
       run:
         working-directory: ./web
