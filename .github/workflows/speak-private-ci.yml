@@ -55,6 +55,56 @@ jobs:
       - name: Run API tests
         run: go test ./...
 
+  test-api-ai-text-live:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.CHECKOUT_REF }}
+          token: ${{ secrets.SPEAK_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run live AI text verification
+        env:
+          IMAGE_TEXT_API_KEY: ${{ secrets.IMAGE_TEXT_API_KEY }}
+          IMAGE_TEXT_BASE_URL: ${{ vars.IMAGE_TEXT_BASE_URL }}
+          IMAGE_TEXT_MODEL: ${{ vars.IMAGE_TEXT_MODEL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${IMAGE_TEXT_API_KEY:-}" || -z "${IMAGE_TEXT_BASE_URL:-}" || -z "${IMAGE_TEXT_MODEL:-}" ]]; then
+            echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text verification." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          image_text_provider="openai"
+          image_text_base_url_lower="$(printf '%s' "$IMAGE_TEXT_BASE_URL" | tr '[:upper:]' '[:lower:]')"
+          image_text_model_lower="$(printf '%s' "$IMAGE_TEXT_MODEL" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$image_text_base_url_lower" == *"generativelanguage.googleapis.com"* || "$image_text_model_lower" == gemini* || "$image_text_model_lower" == models/gemini* ]]; then
+            image_text_provider="gemini"
+          fi
+
+          {
+            echo "AI_PROVIDER=$image_text_provider"
+            echo "AI_ENDPOINT=$IMAGE_TEXT_BASE_URL"
+            echo "AI_TEXT_MODEL=$IMAGE_TEXT_MODEL"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          AI_PROVIDER="$image_text_provider" \
+          AI_API_KEY="$IMAGE_TEXT_API_KEY" \
+          AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
+          AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
+          AI_MODEL="$IMAGE_TEXT_MODEL" \
+          go test -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'
+
   test-proxy:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -357,6 +407,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test-api
+      - test-api-ai-text-live
       - test-proxy
       - test-web
       - test-web-sites
