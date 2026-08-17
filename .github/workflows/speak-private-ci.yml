@@ -112,6 +112,68 @@ jobs:
             sleep $((attempt * 20))
           done
 
+  test-api-omni-audio-e2e:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.CHECKOUT_REF }}
+          token: ${{ secrets.SPEAK_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Run live OMNI audio analysis verification
+        env:
+          OMNI_API_KEY: ${{ secrets.OMNI_API_KEY }}
+          OMNI_BASE_URL: ${{ vars.OMNI_BASE_URL }}
+          OMNI_MODEL: ${{ vars.OMNI_MODEL }}
+          OMNI_API_FORMAT: ${{ vars.OMNI_API_FORMAT }}
+        run: |
+          set -euo pipefail
+          for name in OMNI_API_KEY OMNI_BASE_URL OMNI_MODEL OMNI_API_FORMAT; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "OMNI_* GitHub configuration is incomplete; skipping live audio analysis e2e." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done
+
+          {
+            echo "OMNI_API_FORMAT=$OMNI_API_FORMAT"
+            echo "OMNI_MODEL=$OMNI_MODEL"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          command -v ffmpeg >/dev/null
+          configured_status=0
+          go test -count=1 -v -tags='integration e2e' ./internal/handler -run '^TestOMNIAudioAnalysisLiveE2E$' || configured_status=$?
+          if [[ "$configured_status" -eq 0 ]]; then
+            exit 0
+          fi
+
+          if [[ "$OMNI_API_FORMAT" == "gemini" ]]; then
+            echo "Configured Gemini-native audio failed; probing native text and generated-audio capability without changing the job result." | tee -a "$GITHUB_STEP_SUMMARY"
+            diagnostic_status=0
+            go test -count=1 -v -tags=integration ./internal/ai -run '^TestOMNIGeminiNativeCapabilityDiagnostic$' || diagnostic_status=$?
+            if [[ "$diagnostic_status" -eq 0 ]]; then
+              echo "Gemini-native capability diagnostic completed; see its metadata-only text/audio result above." | tee -a "$GITHUB_STEP_SUMMARY"
+            else
+              echo "Gemini-native capability diagnostic could not complete; review its metadata-only test output." | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          exit "$configured_status"
+
   test-proxy:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -495,6 +557,7 @@ jobs:
     needs:
       - test-api
       - test-api-ai-text-live
+      - test-api-omni-audio-e2e
       - test-proxy
       - test-web
       - test-web-sites

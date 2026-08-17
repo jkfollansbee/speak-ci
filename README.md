@@ -18,6 +18,8 @@ The workflow contains the copied `panda-lingo/speak` test, build, and publish jo
 
 - check out `panda-lingo/speak` with `SPEAK_REPO_TOKEN`
 - run the test matrix
+- run the source repository's uncached OMNI audio-practice, pinned music-analysis,
+  and voice-memo e2e contract when the mirrored `OMNI_*` settings are present
 - build the API and web images
 - optionally publish the images back to `ghcr.io/panda-lingo/speak`
 
@@ -31,6 +33,13 @@ Automatic behavior:
 
 1. In this repository, add an Actions secret named `SPEAK_REPO_TOKEN`.
 2. Use a token that can read the private `panda-lingo/speak` repository.
-3. Keep the workflow job permissions at `packages: write` so the repository `GITHUB_TOKEN` can publish `ghcr.io/panda-lingo/speak`.
+3. Mirror `OMNI_API_FORMAT`, `OMNI_BASE_URL`, and `OMNI_MODEL` as repository
+   variables and `OMNI_API_KEY` as a repository secret. Repository-level
+   values take precedence over inherited organization values and keep all four
+   settings bound to the same provider.
+4. Keep the workflow job permissions at `packages: write` so the repository `GITHUB_TOKEN` can publish `ghcr.io/panda-lingo/speak`.
 
 Without `SPEAK_REPO_TOKEN`, the workflow can start in this public repo, but every job that checks out the private source tree will fail.
+If the resolved `OMNI_*` configuration is incomplete, the live OMNI job is an
+explicit successful no-op. Configure all four values at repository scope before
+dispatching a live run; GitHub otherwise resolves any organization defaults.
