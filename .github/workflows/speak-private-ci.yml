@@ -56,7 +56,7 @@ jobs:
         run: go test ./...
 
   test-api-ai-text-live:
-    timeout-minutes: 20
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
       - name: Checkout private source
@@ -92,12 +92,25 @@ jobs:
             echo "AI_TEXT_MODEL=$IMAGE_TEXT_MODEL"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-          AI_PROVIDER="$IMAGE_TEXT_API_FORMAT" \
-          AI_API_KEY="$IMAGE_TEXT_API_KEY" \
-          AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
-          AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
-          AI_MODEL="$IMAGE_TEXT_MODEL" \
-          go test -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'
+          live_status=0
+          for attempt in 1 2 3; do
+            echo "Live AI text verification attempt ${attempt}/3"
+            if AI_PROVIDER="$IMAGE_TEXT_API_FORMAT" \
+              AI_API_KEY="$IMAGE_TEXT_API_KEY" \
+              AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
+              AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
+              AI_MODEL="$IMAGE_TEXT_MODEL" \
+              go test -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'; then
+              exit 0
+            fi
+
+            live_status=$?
+            if [[ "$attempt" -eq 3 ]]; then
+              exit "$live_status"
+            fi
+            echo "Live AI text verification attempt ${attempt}/3 failed; retrying for transient provider instability." | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep $((attempt * 20))
+          done
 
   test-proxy:
     timeout-minutes: 15
@@ -281,7 +294,7 @@ jobs:
           retention-days: 7
 
   test-web-ai-text-live:
-    timeout-minutes: 40
+    timeout-minutes: 75
     runs-on: ubuntu-latest
     defaults:
       run:
