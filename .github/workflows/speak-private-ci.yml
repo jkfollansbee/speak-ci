@@ -349,7 +349,20 @@ jobs:
             echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text browser e2e." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          npm run test:e2e:ci:ai-text-live
+          live_browser_status=0
+          for attempt in 1 2; do
+            echo "Live AI text browser e2e attempt ${attempt}/2"
+            if npm run test:e2e:ci:ai-text-live; then
+              exit 0
+            fi
+
+            live_browser_status=$?
+            if [[ "$attempt" -eq 2 ]]; then
+              exit "$live_browser_status"
+            fi
+            echo "Live AI text browser e2e attempt ${attempt}/2 failed; retrying the full-stack script with a fresh database for transient provider instability." | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep 20
+          done
 
       - name: Upload live AI text browser failure artifacts
         if: failure()
