@@ -78,27 +78,21 @@ jobs:
           IMAGE_TEXT_API_KEY: ${{ secrets.IMAGE_TEXT_API_KEY }}
           IMAGE_TEXT_BASE_URL: ${{ vars.IMAGE_TEXT_BASE_URL }}
           IMAGE_TEXT_MODEL: ${{ vars.IMAGE_TEXT_MODEL }}
+          IMAGE_TEXT_API_FORMAT: ${{ vars.IMAGE_TEXT_API_FORMAT }}
         run: |
           set -euo pipefail
-          if [[ -z "${IMAGE_TEXT_API_KEY:-}" || -z "${IMAGE_TEXT_BASE_URL:-}" || -z "${IMAGE_TEXT_MODEL:-}" ]]; then
+          if [[ -z "${IMAGE_TEXT_API_KEY:-}" || -z "${IMAGE_TEXT_BASE_URL:-}" || -z "${IMAGE_TEXT_MODEL:-}" || -z "${IMAGE_TEXT_API_FORMAT:-}" ]]; then
             echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text verification." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          image_text_provider="openai"
-          image_text_base_url_lower="$(printf '%s' "$IMAGE_TEXT_BASE_URL" | tr '[:upper:]' '[:lower:]')"
-          image_text_model_lower="$(printf '%s' "$IMAGE_TEXT_MODEL" | tr '[:upper:]' '[:lower:]')"
-          if [[ "$image_text_base_url_lower" == *"generativelanguage.googleapis.com"* || "$image_text_model_lower" == gemini* || "$image_text_model_lower" == models/gemini* ]]; then
-            image_text_provider="gemini"
-          fi
-
           {
-            echo "AI_PROVIDER=$image_text_provider"
+            echo "AI_PROVIDER=$IMAGE_TEXT_API_FORMAT"
             echo "AI_ENDPOINT=$IMAGE_TEXT_BASE_URL"
             echo "AI_TEXT_MODEL=$IMAGE_TEXT_MODEL"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-          AI_PROVIDER="$image_text_provider" \
+          AI_PROVIDER="$IMAGE_TEXT_API_FORMAT" \
           AI_API_KEY="$IMAGE_TEXT_API_KEY" \
           AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
           AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
@@ -286,6 +280,73 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  test-web-ai-text-live:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.CHECKOUT_REF }}
+          token: ${{ secrets.SPEAK_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Set up Chrome browser
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium
+
+      - name: Verify Chrome browser
+        run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'
+
+      - name: Run live AI text browser e2e
+        env:
+          IMAGE_TEXT_API_KEY: ${{ secrets.IMAGE_TEXT_API_KEY }}
+          IMAGE_TEXT_BASE_URL: ${{ vars.IMAGE_TEXT_BASE_URL }}
+          IMAGE_TEXT_MODEL: ${{ vars.IMAGE_TEXT_MODEL }}
+          IMAGE_TEXT_API_FORMAT: ${{ vars.IMAGE_TEXT_API_FORMAT }}
+          PLAYWRIGHT_BROWSER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${IMAGE_TEXT_API_KEY:-}" || -z "${IMAGE_TEXT_BASE_URL:-}" || -z "${IMAGE_TEXT_MODEL:-}" || -z "${IMAGE_TEXT_API_FORMAT:-}" ]]; then
+            echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text browser e2e." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          npm run test:e2e:ci:ai-text-live
+
+      - name: Upload live AI text browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-ai-text-live-attempt-${{ github.run_attempt }}
+          path: web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   test-web-e2e:
     name: test-web-e2e (${{ matrix.database }})
     timeout-minutes: 30
@@ -412,6 +473,7 @@ jobs:
       - test-web
       - test-web-sites
       - test-web-base-path
+      - test-web-ai-text-live
       - test-web-e2e
       - test-web-e2e-redroid-mobile
     steps:
