@@ -109,26 +109,7 @@ jobs:
             echo "AI_TEXT_MODEL=$IMAGE_TEXT_MODEL"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-          for attempt in 1 2 3; do
-            echo "Live AI text verification attempt ${attempt}/3"
-            live_status=0
-            if AI_PROVIDER="$IMAGE_TEXT_API_FORMAT" \
-              AI_API_KEY="$IMAGE_TEXT_API_KEY" \
-              AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
-              AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
-              AI_MODEL="$IMAGE_TEXT_MODEL" \
-              go test -p 1 -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'; then
-              exit 0
-            else
-              live_status=$?
-            fi
-
-            if [[ "$attempt" -eq 3 ]]; then
-              exit "$live_status"
-            fi
-            echo "Live AI text verification attempt ${attempt}/3 failed; retrying for transient provider instability." | tee -a "$GITHUB_STEP_SUMMARY"
-            sleep $((attempt * 20))
-          done
+          ./scripts/run-live-ai-text-tests.sh
 
   test-api-omni-audio-e2e:
     timeout-minutes: 9

@@ -164,8 +164,8 @@ if ! grep -Fq './scripts/validate-live-ai-text-config.sh' <<< "$live_api_block";
   echo "Live AI API job must run the provider configuration preflight" >&2
   exit 1
 fi
-if ! grep -Fq "go test -p 1 -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'" <<< "$live_api_block"; then
-  echo "Live AI API job must serialize its Go test packages for the shared provider backend" >&2
+if ! grep -Fq './scripts/run-live-ai-text-tests.sh' <<< "$live_api_block"; then
+  echo "Live AI API job must use the data-driven live text scenario runner" >&2
   exit 1
 fi
 
