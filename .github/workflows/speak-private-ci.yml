@@ -480,7 +480,10 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-          install-dependencies: true
+          # GitHub-hosted Ubuntu already includes Chrome's shared libraries.
+          # Avoid setup-chrome's unbounded apt-get update before this 9-minute
+          # real-provider journey; the next step proves the binary launches.
+          install-dependencies: false
 
       - name: Verify Chrome browser
         run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'

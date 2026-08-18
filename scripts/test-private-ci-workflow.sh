@@ -195,6 +195,14 @@ if ! grep -Fq 'npm run test:e2e:ci:live-talk-live' <<< "$live_talk_browser_block
   echo "Live Talk browser job must run the dedicated real-provider e2e command" >&2
   exit 1
 fi
+if ! grep -Fq 'install-dependencies: false' <<< "$live_talk_browser_block"; then
+  echo "Live Talk browser job must avoid an unbounded APT dependency refresh" >&2
+  exit 1
+fi
+if ! grep -Fq 'Verify Chrome browser' <<< "$live_talk_browser_block"; then
+  echo "Live Talk browser job must verify the action-provided Chrome executable" >&2
+  exit 1
+fi
 if grep -Fq 'LIVE_TALK_API_KEY=$LIVE_TALK_API_KEY' <<< "$live_talk_browser_block"; then
   echo "Live Talk browser job must not print its API key" >&2
   exit 1
