@@ -117,7 +117,7 @@ jobs:
               AI_ENDPOINT="$IMAGE_TEXT_BASE_URL" \
               AI_TEXT_MODEL="$IMAGE_TEXT_MODEL" \
               AI_MODEL="$IMAGE_TEXT_MODEL" \
-              go test -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'; then
+              go test -p 1 -v -tags=integration ./internal/ai ./internal/handler ./cmd/api -run '^TestLiveAIText_'; then
               exit 0
             else
               live_status=$?
