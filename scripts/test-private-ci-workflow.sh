@@ -227,16 +227,32 @@ if ! grep -Fq './scripts/run-live-omni-audio-tests.sh' <<< "$omni_block"; then
   echo "OMNI audio job must use the data-driven audio scenario runner" >&2
   exit 1
 fi
-if grep -Fq 'apt-get update' <<< "$omni_block"; then
-  echo "OMNI audio job must not refresh package indexes before provider verification" >&2
+if grep -Fq 'apt-get' <<< "$omni_block"; then
+  echo "OMNI audio job must not use an APT mirror before provider verification" >&2
   exit 1
 fi
-if ! grep -Fq 'if ! command -v ffmpeg >/dev/null; then' <<< "$omni_block"; then
+if ! grep -Fq 'if command -v ffmpeg >/dev/null; then' <<< "$omni_block"; then
   echo "OMNI audio job must use the hosted runner FFmpeg binary when available" >&2
   exit 1
 fi
-if ! grep -Fq 'timeout 120s sudo apt-get install -y --no-install-recommends ffmpeg' <<< "$omni_block"; then
-  echo "OMNI audio job must bound its missing-FFmpeg fallback install" >&2
+if ! grep -Fq 'timeout 240s curl --fail --location --retry 2 --retry-all-errors' <<< "$omni_block"; then
+  echo "OMNI audio job must bound its missing-FFmpeg archive download" >&2
+  exit 1
+fi
+if ! grep -Fq 'autobuild-2026-08-18-15-03/ffmpeg-N-126207-g21bbd98e7b-linux64-gpl.tar.xz' <<< "$omni_block"; then
+  echo "OMNI audio job must use the declared static FFmpeg release" >&2
+  exit 1
+fi
+if ! grep -Fq 'ae86e7d2924f46a4658c2a83a74096c8bf5dc7e78bd94e869ff35b45ddf762a0' <<< "$omni_block"; then
+  echo "OMNI audio job must pin the FFmpeg archive checksum" >&2
+  exit 1
+fi
+if ! grep -Fq 'sha256sum --check --status' <<< "$omni_block"; then
+  echo "OMNI audio job must verify the FFmpeg archive checksum" >&2
+  exit 1
+fi
+if ! grep -Fq 'GITHUB_PATH' <<< "$omni_block"; then
+  echo "OMNI audio job must expose the verified FFmpeg binary to later steps" >&2
   exit 1
 fi
 if ! grep -Fq 'ffmpeg -version' <<< "$omni_block"; then

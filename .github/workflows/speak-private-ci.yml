@@ -136,10 +136,24 @@ jobs:
       - name: Set up FFmpeg
         run: |
           set -euo pipefail
-          if ! command -v ffmpeg >/dev/null; then
-            timeout 120s sudo apt-get install -y --no-install-recommends ffmpeg
+          if command -v ffmpeg >/dev/null; then
+            ffmpeg -version
+          else
+            ffmpeg_archive="$RUNNER_TEMP/ffmpeg-N-126207-g21bbd98e7b-linux64-gpl.tar.xz"
+            ffmpeg_root="$RUNNER_TEMP/ffmpeg-static"
+            ffmpeg_url="https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-18-15-03/ffmpeg-N-126207-g21bbd98e7b-linux64-gpl.tar.xz"
+            ffmpeg_sha256="ae86e7d2924f46a4658c2a83a74096c8bf5dc7e78bd94e869ff35b45ddf762a0"
+
+            timeout 240s curl --fail --location --retry 2 --retry-all-errors --connect-timeout 15 --max-time 75 --output "$ffmpeg_archive" "$ffmpeg_url"
+            printf '%s  %s\n' "$ffmpeg_sha256" "$ffmpeg_archive" | sha256sum --check --status
+            mkdir -p "$ffmpeg_root"
+            tar -xJf "$ffmpeg_archive" -C "$ffmpeg_root"
+            ffmpeg_binary="$(find "$ffmpeg_root" -type f -path '*/bin/ffmpeg' -print -quit)"
+            test -n "$ffmpeg_binary"
+            test -x "$ffmpeg_binary"
+            echo "$(dirname "$ffmpeg_binary")" >> "$GITHUB_PATH"
+            "$ffmpeg_binary" -version
           fi
-          ffmpeg -version
 
       - name: Run live OMNI audio analysis verification
         env:
