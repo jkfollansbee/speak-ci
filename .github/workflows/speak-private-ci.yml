@@ -386,6 +386,7 @@ jobs:
 
   test-web-ai-text-live:
     name: test-web-ai-text-live (${{ matrix.scenario }})
+    needs: test-api-ai-text-live
     timeout-minutes: 9
     runs-on: ubuntu-latest
     strategy:

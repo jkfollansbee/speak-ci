@@ -102,7 +102,13 @@ workflow_job() {
 }
 
 for job in "${test_jobs[@]}"; do
-  if grep -Eq '^    needs:' <<< "$(workflow_job "$job")"; then
+  job_block="$(workflow_job "$job")"
+  if [[ "$job" == "test-web-ai-text-live" ]]; then
+    if ! grep -Fxq '    needs: test-api-ai-text-live' <<< "$job_block"; then
+      echo "Live AI browser job must depend on the direct API live job" >&2
+      exit 1
+    fi
+  elif grep -Eq '^    needs:' <<< "$job_block"; then
     echo "Required test job $job must start without a needs dependency" >&2
     exit 1
   fi
