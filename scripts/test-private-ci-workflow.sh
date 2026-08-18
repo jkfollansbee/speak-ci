@@ -114,6 +114,12 @@ for job in "${test_jobs[@]}"; do
   fi
 done
 
+live_ai_job_block="$(workflow_job test-api-ai-text-live)"
+if ! grep -Fxq '          AI_HTTP_TRACE: "1"' <<< "$live_ai_job_block"; then
+  echo "test-api-ai-text-live must enable redacted AI HTTP tracing" >&2
+  exit 1
+fi
+
 quality_gate_block="$(workflow_job quality-gate)"
 if ! grep -Fxq '    if: always()' <<< "$quality_gate_block" ||
   ! grep -Fq 'all(.[]; .result == "success")' <<< "$quality_gate_block"; then

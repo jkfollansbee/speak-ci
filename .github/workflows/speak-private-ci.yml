@@ -94,6 +94,7 @@ jobs:
           IMAGE_TEXT_BASE_URL: ${{ vars.IMAGE_TEXT_BASE_URL }}
           IMAGE_TEXT_MODEL: ${{ vars.IMAGE_TEXT_MODEL }}
           IMAGE_TEXT_API_FORMAT: ${{ vars.IMAGE_TEXT_API_FORMAT }}
+          AI_HTTP_TRACE: "1"
         run: |
           set -euo pipefail
           if [[ -z "${IMAGE_TEXT_API_KEY:-}" || -z "${IMAGE_TEXT_BASE_URL:-}" || -z "${IMAGE_TEXT_MODEL:-}" || -z "${IMAGE_TEXT_API_FORMAT:-}" ]]; then
