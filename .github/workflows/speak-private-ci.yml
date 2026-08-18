@@ -67,6 +67,9 @@ jobs:
       - name: Validate live AI config helper
         run: ./scripts/test-live-ai-text-config.sh
 
+      - name: Validate Live Talk config helper
+        run: ./scripts/test-live-talk-config.sh
+
       - name: Run API tests
         run: go test ./...
 
@@ -441,6 +444,79 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  test-web-live-talk-live:
+    timeout-minutes: 9
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.CHECKOUT_REF }}
+          token: ${{ secrets.SPEAK_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Set up Chrome browser
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+
+      - name: Verify Chrome browser
+        run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'
+
+      - name: Run real Live Talk browser e2e
+        env:
+          LIVE_TALK_API_KEY: ${{ secrets.LIVE_TALK_API_KEY }}
+          LIVE_TALK_BASE_URL: ${{ vars.LIVE_TALK_BASE_URL }}
+          LIVE_TALK_MODEL: ${{ vars.LIVE_TALK_MODEL }}
+          LIVE_TALK_API_FORMAT: ${{ vars.LIVE_TALK_API_FORMAT }}
+          PLAYWRIGHT_BROWSER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          for name in LIVE_TALK_API_KEY LIVE_TALK_BASE_URL LIVE_TALK_MODEL LIVE_TALK_API_FORMAT; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "LIVE_TALK_* GitHub configuration is incomplete; skipping real Live Talk browser e2e." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done
+
+          ../scripts/validate-live-talk-config.sh
+          {
+            echo "LIVE_TALK_API_FORMAT=$LIVE_TALK_API_FORMAT"
+            echo "LIVE_TALK_MODEL=$LIVE_TALK_MODEL"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          npm run test:e2e:ci:live-talk-live
+
+      - name: Upload real Live Talk browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-live-talk-live-attempt-${{ github.run_attempt }}
+          path: web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   test-web-e2e:
     name: test-web-e2e (${{ matrix.database }})
     timeout-minutes: 9
@@ -608,6 +684,7 @@ jobs:
       - test-web-sites
       - test-web-base-path
       - test-web-ai-text-live
+      - test-web-live-talk-live
       - test-web-e2e
       - test-web-e2e-redroid-mobile
     steps:

@@ -20,6 +20,7 @@ test_jobs=(
   test-web-sites
   test-web-base-path
   test-web-ai-text-live
+  test-web-live-talk-live
   test-web-e2e
   test-web-e2e-redroid-mobile
 )
@@ -172,6 +173,30 @@ if ! grep -Fxq '      max-parallel: 1' <<< "$live_browser_block"; then
 fi
 if ! grep -Fq '../scripts/validate-live-ai-text-config.sh' <<< "$live_browser_block"; then
   echo "Live AI browser job must run the provider configuration preflight" >&2
+  exit 1
+fi
+
+live_talk_browser_block="$(workflow_job test-web-live-talk-live)"
+for mapping in \
+  'LIVE_TALK_API_KEY: ${{ secrets.LIVE_TALK_API_KEY }}' \
+  'LIVE_TALK_BASE_URL: ${{ vars.LIVE_TALK_BASE_URL }}' \
+  'LIVE_TALK_MODEL: ${{ vars.LIVE_TALK_MODEL }}' \
+  'LIVE_TALK_API_FORMAT: ${{ vars.LIVE_TALK_API_FORMAT }}'; do
+  if ! grep -Fq "$mapping" <<< "$live_talk_browser_block"; then
+    echo "Live Talk browser job must preserve the declared configuration mapping: $mapping" >&2
+    exit 1
+  fi
+done
+if ! grep -Fq '../scripts/validate-live-talk-config.sh' <<< "$live_talk_browser_block"; then
+  echo "Live Talk browser job must run the provider configuration preflight" >&2
+  exit 1
+fi
+if ! grep -Fq 'npm run test:e2e:ci:live-talk-live' <<< "$live_talk_browser_block"; then
+  echo "Live Talk browser job must run the dedicated real-provider e2e command" >&2
+  exit 1
+fi
+if grep -Fq 'LIVE_TALK_API_KEY=$LIVE_TALK_API_KEY' <<< "$live_talk_browser_block"; then
+  echo "Live Talk browser job must not print its API key" >&2
   exit 1
 fi
 

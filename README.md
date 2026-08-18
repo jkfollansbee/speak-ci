@@ -22,6 +22,9 @@ The workflow contains the copied `panda-lingo/speak` test, build, and publish jo
 - run the test matrix
 - run the source repository's uncached OMNI audio-practice, pinned music-analysis,
   and voice-memo e2e contract when the mirrored `OMNI_*` settings are present
+- run the source repository's real Live Talk browser journey when the mirrored
+  `LIVE_TALK_*` settings are present; the journey configures the Free plan
+  through the Admin Portal UI before it starts a learner conversation
 - build the API and web images
 - optionally publish the images back to `ghcr.io/panda-lingo/speak`
 
@@ -54,9 +57,18 @@ cannot silently bypass the timeout policy or required-result gate.
    variables and `OMNI_API_KEY` as a repository secret. Repository-level
    values take precedence over inherited organization values and keep all four
    settings bound to the same provider.
-4. Keep the workflow job permissions at `packages: write` so the repository `GITHUB_TOKEN` can publish `ghcr.io/panda-lingo/speak`.
+4. Mirror `LIVE_TALK_API_FORMAT`, `LIVE_TALK_BASE_URL`, and `LIVE_TALK_MODEL`
+   as repository variables and `LIVE_TALK_API_KEY` as a repository secret. The
+   format must be `gemini` or `openai`, and all four values must describe the
+   same realtime provider endpoint. The workflow passes them only to the
+   Live Talk job, whose browser setup writes them through `/admin/plans` rather
+   than pre-seeding provider settings through an API shortcut.
+5. Keep the workflow job permissions at `packages: write` so the repository `GITHUB_TOKEN` can publish `ghcr.io/panda-lingo/speak`.
 
 Without `SPEAK_REPO_TOKEN`, the workflow can start in this public repo, but every job that checks out the private source tree will fail.
 If the resolved `OMNI_*` configuration is incomplete, the live OMNI job is an
 explicit successful no-op. Configure all four values at repository scope before
 dispatching a live run; GitHub otherwise resolves any organization defaults.
+The Live Talk job follows the same explicit-no-op rule only when its entire
+`LIVE_TALK_*` configuration is absent or incomplete; a non-empty unsupported
+format fails as a configuration error.
