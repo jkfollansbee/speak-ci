@@ -227,6 +227,22 @@ if ! grep -Fq './scripts/run-live-omni-audio-tests.sh' <<< "$omni_block"; then
   echo "OMNI audio job must use the data-driven audio scenario runner" >&2
   exit 1
 fi
+if grep -Fq 'apt-get update' <<< "$omni_block"; then
+  echo "OMNI audio job must not refresh package indexes before provider verification" >&2
+  exit 1
+fi
+if ! grep -Fq 'if ! command -v ffmpeg >/dev/null; then' <<< "$omni_block"; then
+  echo "OMNI audio job must use the hosted runner FFmpeg binary when available" >&2
+  exit 1
+fi
+if ! grep -Fq 'timeout 120s sudo apt-get install -y --no-install-recommends ffmpeg' <<< "$omni_block"; then
+  echo "OMNI audio job must bound its missing-FFmpeg fallback install" >&2
+  exit 1
+fi
+if ! grep -Fq 'ffmpeg -version' <<< "$omni_block"; then
+  echo "OMNI audio job must verify FFmpeg before provider scenarios" >&2
+  exit 1
+fi
 
 if grep -Fq "TestOMNIAudioAnalysisLiveE2E$'" <<< "$omni_block"; then
   echo "OMNI audio job must not replay the combined audio scenario batch" >&2
