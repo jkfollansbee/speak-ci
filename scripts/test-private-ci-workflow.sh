@@ -120,6 +120,14 @@ if ! grep -Fxq '          AI_HTTP_TRACE: "1"' <<< "$live_ai_job_block"; then
   exit 1
 fi
 
+redroid_job_block="$(workflow_job test-web-e2e-redroid-mobile)"
+if ! grep -Fq 'nohup bash -c' <<< "$redroid_job_block" ||
+  ! grep -Fq '      - name: Wait for redroid Android' <<< "$redroid_job_block" ||
+  ! grep -Fq 'redroid-start.status' <<< "$redroid_job_block"; then
+  echo "Redroid mobile jobs must overlap startup with web install and wait on its status log" >&2
+  exit 1
+fi
+
 quality_gate_block="$(workflow_job quality-gate)"
 if ! grep -Fxq '    if: always()' <<< "$quality_gate_block" ||
   ! grep -Fq 'all(.[]; .result == "success")' <<< "$quality_gate_block"; then

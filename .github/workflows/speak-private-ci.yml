@@ -532,13 +532,45 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Start redroid Android
+        run: |
+          set -euo pipefail
+          redroid_log="$RUNNER_TEMP/redroid-start.log"
+          redroid_status="$RUNNER_TEMP/redroid-start.status"
+          rm -f "$redroid_log" "$redroid_status"
+          nohup bash -c '
+            ./scripts/ci-start-redroid.sh >"$1" 2>&1
+            status=$?
+            printf "%s\n" "$status" >"$2"
+          ' _ "$redroid_log" "$redroid_status" >/dev/null 2>&1 &
+          echo "Redroid startup launched asynchronously."
+
       - name: Install web dependencies
         working-directory: ./web
         run: npm ci
 
-      - name: Start redroid Android
-        run: ./scripts/ci-start-redroid.sh
-
+      - name: Wait for redroid Android
+        run: |
+          set -euo pipefail
+          redroid_log="$RUNNER_TEMP/redroid-start.log"
+          redroid_status="$RUNNER_TEMP/redroid-start.status"
+          for ((elapsed = 0; elapsed < 480; elapsed += 2)); do
+            if [[ -f "$redroid_status" ]]; then
+              break
+            fi
+            sleep 2
+          done
+          if [[ ! -f "$redroid_status" ]]; then
+            echo "Redroid startup exceeded its bounded wait." >&2
+            sed -n '1,240p' "$redroid_log" >&2 || true
+            exit 1
+          fi
+          sed -n '1,240p' "$redroid_log"
+          redroid_exit_status="$(<"$redroid_status")"
+          if [[ "$redroid_exit_status" != "0" ]]; then
+            echo "Redroid startup failed with status $redroid_exit_status." >&2
+            exit "$redroid_exit_status"
+          fi
       - name: Run redroid mobile full-stack e2e
         working-directory: ./web
         env:
