@@ -16,6 +16,8 @@ The workflow at `.github/workflows/speak-private-ci.yml` is pinned to this organ
 
 The workflow contains the copied `panda-lingo/speak` test, build, and publish jobs and asks them to:
 
+- validate its own job timeout and quality-gate contract in a fast
+  `test-private-ci-workflow` job
 - check out `panda-lingo/speak` with `SPEAK_REPO_TOKEN`
 - run the test matrix
 - run the source repository's uncached OMNI audio-practice, pinned music-analysis,
@@ -28,6 +30,21 @@ Automatic behavior:
 - pushes and pull requests in this repo run tests and image builds against the matching branch name in `panda-lingo/speak`
 - pushes to `main` and tags that start with `v` also publish images
 - manual runs can choose any `source_ref` from `panda-lingo/speak` and can force publishing with the `publish_image` input
+
+## Job timeout contract
+
+The workflow uses a declarative timeout budget for every job:
+
+| Job group | `timeout-minutes` | Constraint |
+| --- | ---: | --- |
+| `test-*` and `build-*` jobs | 9 | Must remain strictly below 10 minutes |
+| `quality-gate` | 5 | Must remain strictly below 10 minutes |
+
+Every job must declare an integer `timeout-minutes` value from 1 through 9. The
+`quality-gate` must list every `test-*` job in `needs`, including the standalone
+`mm-gateway` deployment smoke. The contract script at
+`scripts/test-private-ci-workflow.sh` checks these mappings so a newly added job
+cannot silently bypass the timeout policy or required-result gate.
 
 ## Required Setup
 
