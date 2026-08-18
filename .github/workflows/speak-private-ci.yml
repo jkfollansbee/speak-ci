@@ -64,6 +64,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Validate live AI config helper
+        run: ./scripts/test-live-ai-text-config.sh
+
       - name: Run API tests
         run: go test ./...
 
@@ -97,6 +100,8 @@ jobs:
             echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text verification." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+
+          ./scripts/validate-live-ai-text-config.sh
 
           {
             echo "AI_PROVIDER=$IMAGE_TEXT_API_FORMAT"
@@ -385,6 +390,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         scenario: [practice, reader-text, reader-image, music, rss, pet]
     defaults:
@@ -439,6 +445,7 @@ jobs:
             echo "IMAGE_TEXT_* GitHub configuration is incomplete; skipping live AI text browser e2e." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          ../scripts/validate-live-ai-text-config.sh
           echo "Running live AI browser scenario: $LIVE_AI_SCENARIO" | tee -a "$GITHUB_STEP_SUMMARY"
           npm run test:e2e:ci:ai-text-live
 

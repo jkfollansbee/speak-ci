@@ -143,4 +143,20 @@ if ! awk '
   exit 1
 fi
 
+live_browser_block="$(workflow_job test-web-ai-text-live)"
+if ! grep -Fxq '      max-parallel: 1' <<< "$live_browser_block"; then
+  echo "Live AI browser matrix must cap provider concurrency at one job" >&2
+  exit 1
+fi
+if ! grep -Fq '../scripts/validate-live-ai-text-config.sh' <<< "$live_browser_block"; then
+  echo "Live AI browser job must run the provider configuration preflight" >&2
+  exit 1
+fi
+
+live_api_block="$(workflow_job test-api-ai-text-live)"
+if ! grep -Fq './scripts/validate-live-ai-text-config.sh' <<< "$live_api_block"; then
+  echo "Live AI API job must run the provider configuration preflight" >&2
+  exit 1
+fi
+
 echo "Private CI workflow contract passed: ${#seen_jobs[@]} jobs have timeouts below 10 minutes."
