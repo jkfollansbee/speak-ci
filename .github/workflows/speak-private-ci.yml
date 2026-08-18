@@ -282,7 +282,7 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-          install-dependencies: true
+          install-dependencies: false
 
       - name: Verify Chrome browser
         run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'
@@ -332,7 +332,7 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-          install-dependencies: true
+          install-dependencies: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -412,7 +412,7 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-          install-dependencies: true
+          install-dependencies: false
 
       - name: Verify Chrome browser
         run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'
@@ -561,7 +561,7 @@ jobs:
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-          install-dependencies: true
+          install-dependencies: false
 
       - name: Verify Chrome browser
         run: '"${{ steps.setup-chrome.outputs.chrome-path }}" --version'

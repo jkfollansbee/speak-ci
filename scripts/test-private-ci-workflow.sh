@@ -195,18 +195,22 @@ if ! grep -Fq 'npm run test:e2e:ci:live-talk-live' <<< "$live_talk_browser_block
   echo "Live Talk browser job must run the dedicated real-provider e2e command" >&2
   exit 1
 fi
-if ! grep -Fq 'install-dependencies: false' <<< "$live_talk_browser_block"; then
-  echo "Live Talk browser job must avoid an unbounded APT dependency refresh" >&2
-  exit 1
-fi
-if ! grep -Fq 'Verify Chrome browser' <<< "$live_talk_browser_block"; then
-  echo "Live Talk browser job must verify the action-provided Chrome executable" >&2
-  exit 1
-fi
 if grep -Fq 'LIVE_TALK_API_KEY=$LIVE_TALK_API_KEY' <<< "$live_talk_browser_block"; then
   echo "Live Talk browser job must not print its API key" >&2
   exit 1
 fi
+
+for browser_job in test-web-sites test-web-base-path test-web-ai-text-live test-web-live-talk-live test-web-e2e; do
+  browser_job_block="$(workflow_job "$browser_job")"
+  if ! grep -Fq 'install-dependencies: false' <<< "$browser_job_block"; then
+    echo "$browser_job must avoid an unbounded APT dependency refresh" >&2
+    exit 1
+  fi
+  if ! grep -Fq 'Verify Chrome browser' <<< "$browser_job_block"; then
+    echo "$browser_job must verify the action-provided Chrome executable" >&2
+    exit 1
+  fi
+done
 
 live_api_block="$(workflow_job test-api-ai-text-live)"
 if ! grep -Fq './scripts/validate-live-ai-text-config.sh' <<< "$live_api_block"; then
