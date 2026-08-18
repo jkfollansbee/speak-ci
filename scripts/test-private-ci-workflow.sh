@@ -169,4 +169,15 @@ if ! grep -Fq './scripts/run-live-ai-text-tests.sh' <<< "$live_api_block"; then
   exit 1
 fi
 
+omni_block="$(workflow_job test-api-omni-audio-e2e)"
+if ! grep -Fq './scripts/run-live-omni-audio-tests.sh' <<< "$omni_block"; then
+  echo "OMNI audio job must use the data-driven audio scenario runner" >&2
+  exit 1
+fi
+
+if grep -Fq "TestOMNIAudioAnalysisLiveE2E$'" <<< "$omni_block"; then
+  echo "OMNI audio job must not replay the combined audio scenario batch" >&2
+  exit 1
+fi
+
 echo "Private CI workflow contract passed: ${#seen_jobs[@]} jobs have timeouts below 10 minutes."

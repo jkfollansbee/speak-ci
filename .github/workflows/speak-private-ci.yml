@@ -156,7 +156,7 @@ jobs:
 
           command -v ffmpeg >/dev/null
           configured_status=0
-          go test -count=1 -v -tags='integration e2e' ./internal/handler -run '^TestOMNIAudioAnalysisLiveE2E$' || configured_status=$?
+          ./scripts/run-live-omni-audio-tests.sh || configured_status=$?
           if [[ "$configured_status" -eq 0 ]]; then
             exit 0
           fi
