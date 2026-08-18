@@ -672,6 +672,19 @@ jobs:
             echo "Redroid startup completed without a valid browser package." >&2
             exit 1
           fi
+          redroid_platform_tools_dir="$(sed -n 's/^Using Android Platform-Tools directory: //p' "$redroid_log" | tail -n 1)"
+          if [[ -n "$redroid_platform_tools_dir" ]]; then
+            if [[ "$redroid_platform_tools_dir" != "$RUNNER_TEMP"/speak-platform-tools.*/platform-tools ]] ||
+              [[ ! -x "$redroid_platform_tools_dir/adb" ]]; then
+              echo "Redroid startup completed with an invalid Android Platform-Tools directory." >&2
+              exit 1
+            fi
+            echo "$redroid_platform_tools_dir" >> "$GITHUB_PATH"
+            echo "Redroid Android Platform-Tools exported for later steps: $redroid_platform_tools_dir"
+          elif ! command -v adb >/dev/null 2>&1; then
+            echo "Redroid startup completed without adb available to later steps." >&2
+            exit 1
+          fi
           echo "REDROID_BROWSER_PACKAGE=$redroid_browser_package" >> "$GITHUB_ENV"
           echo "Redroid browser package exported for later steps: $redroid_browser_package"
       - name: Run redroid mobile full-stack e2e

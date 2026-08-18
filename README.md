@@ -25,6 +25,10 @@ The workflow contains the copied `panda-lingo/speak` test, build, and publish jo
 - run the source repository's real Live Talk browser journey when the mirrored
   `LIVE_TALK_*` settings are present; the journey configures the Free plan
   through the Admin Portal UI before it starts a learner conversation
+- bootstrap Redroid without an APT index refresh: use the hosted runner's
+  binder/tool baseline and download the official Android Platform-Tools archive
+  only when `adb` is absent, then validate and re-export its logged tool
+  directory for the later browser step
 - build the API and web images
 - optionally publish the images back to `ghcr.io/panda-lingo/speak`
 
