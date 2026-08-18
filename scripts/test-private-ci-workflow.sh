@@ -123,7 +123,9 @@ fi
 redroid_job_block="$(workflow_job test-web-e2e-redroid-mobile)"
 if ! grep -Fq 'nohup bash -c' <<< "$redroid_job_block" ||
   ! grep -Fq '      - name: Wait for redroid Android' <<< "$redroid_job_block" ||
-  ! grep -Fq 'redroid-start.status' <<< "$redroid_job_block"; then
+  ! grep -Fq 'redroid-start.status' <<< "$redroid_job_block" ||
+  ! grep -Fq 'Using Android browser package:' <<< "$redroid_job_block" ||
+  ! grep -Fq 'REDROID_BROWSER_PACKAGE=$redroid_browser_package' <<< "$redroid_job_block"; then
   echo "Redroid mobile jobs must overlap startup with web install and wait on its status log" >&2
   exit 1
 fi

@@ -571,6 +571,13 @@ jobs:
             echo "Redroid startup failed with status $redroid_exit_status." >&2
             exit "$redroid_exit_status"
           fi
+          redroid_browser_package="$(sed -n 's/^Using Android browser package: //p' "$redroid_log" | tail -n 1)"
+          if [[ ! "$redroid_browser_package" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Redroid startup completed without a valid browser package." >&2
+            exit 1
+          fi
+          echo "REDROID_BROWSER_PACKAGE=$redroid_browser_package" >> "$GITHUB_ENV"
+          echo "Redroid browser package exported for later steps: $redroid_browser_package"
       - name: Run redroid mobile full-stack e2e
         working-directory: ./web
         env:
