@@ -248,6 +248,28 @@ if grep -Eq 'NEXT_PUBLIC_(API_URL|BASE_PATH)=' <<< "$base_path_block" ||
   exit 1
 fi
 
+postflight_artifact_contracts=(
+  'test-proxy|e2e-observability-proxy-attempt-${{ github.run_attempt }}|.tmp/e2e/observability/proxy-*'
+  'test-standalone-mm-gateway|e2e-observability-standalone-mm-gateway-attempt-${{ github.run_attempt }}|.tmp/e2e/observability/standalone-mm-gateway'
+  'test-standalone-operations|e2e-observability-standalone-operations-attempt-${{ github.run_attempt }}|.tmp/e2e/observability/standalone-operations'
+  'test-web-base-path|e2e-observability-base-path-attempt-${{ github.run_attempt }}|.tmp/e2e/observability/runtime-prefix'
+  'test-web-ai-text-live|e2e-observability-ai-text-${{ matrix.scenario }}-attempt-${{ github.run_attempt }}|.tmp/e2e/observability'
+  'test-web-live-talk-live|e2e-observability-live-talk-attempt-${{ github.run_attempt }}|.tmp/e2e/observability'
+  'test-web-e2e|e2e-observability-desktop-${{ matrix.database }}-attempt-${{ github.run_attempt }}|.tmp/e2e/observability'
+  'test-web-e2e-redroid-mobile|e2e-observability-redroid-${{ matrix.database }}-attempt-${{ github.run_attempt }}|.tmp/e2e/observability'
+)
+for contract in "${postflight_artifact_contracts[@]}"; do
+  IFS='|' read -r job artifact_name artifact_path <<< "$contract"
+  job_block="$(workflow_job "$job")"
+  if ! grep -Fq "name: $artifact_name" <<< "$job_block" ||
+    ! grep -Fq 'if: always()' <<< "$job_block" ||
+    ! grep -Fq 'uses: actions/upload-artifact@v7' <<< "$job_block" ||
+    ! grep -Fq "path: $artifact_path" <<< "$job_block"; then
+    echo "$job must upload non-secret e2e postflight evidence on every result" >&2
+    exit 1
+  fi
+done
+
 live_api_block="$(workflow_job test-api-ai-text-live)"
 if ! grep -Fq './scripts/validate-live-ai-text-config.sh' <<< "$live_api_block"; then
   echo "Live AI API job must run the provider configuration preflight" >&2

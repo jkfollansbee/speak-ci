@@ -206,8 +206,19 @@ jobs:
           token: ${{ secrets.SPEAK_REPO_TOKEN }}
           persist-credentials: false
 
-      - name: Run standalone proxy topology smoke
-        run: ./scripts/test-standalone-proxy-topology.sh
+      - name: Run standalone proxy topology smokes at origin root and subpath
+        run: |
+          SPEAK_URL_PREFIX=/ ./scripts/test-standalone-proxy-topology.sh
+          SPEAK_URL_PREFIX=/academy ./scripts/test-standalone-proxy-topology.sh
+
+      - name: Upload standalone proxy postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-proxy-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability/proxy-*
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-standalone-mm-gateway:
     timeout-minutes: 9
@@ -224,6 +235,15 @@ jobs:
       - name: Run standalone mm-gateway smoke
         run: ./scripts/test-standalone-mm-gateway.sh
 
+      - name: Upload standalone mm-gateway postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-standalone-mm-gateway-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability/standalone-mm-gateway
+          if-no-files-found: ignore
+          retention-days: 7
+
   test-standalone-operations:
     timeout-minutes: 9
     runs-on: ubuntu-latest
@@ -238,6 +258,15 @@ jobs:
 
       - name: Run standalone stateful operations smoke
         run: ./scripts/test-standalone-operations.sh
+
+      - name: Upload standalone operations postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-standalone-operations-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability/standalone-operations
+          if-no-files-found: ignore
+          retention-days: 7
 
   test-web:
     timeout-minutes: 9
@@ -398,6 +427,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Upload runtime-prefix postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-base-path-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability/runtime-prefix
+          if-no-files-found: ignore
+          retention-days: 7
+
   test-web-ai-text-live:
     name: test-web-ai-text-live (${{ matrix.scenario }})
     needs: test-api-ai-text-live
@@ -470,6 +508,15 @@ jobs:
         with:
           name: playwright-ai-text-live-${{ matrix.scenario }}-attempt-${{ github.run_attempt }}
           path: web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload live AI text postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-ai-text-${{ matrix.scenario }}-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability
           if-no-files-found: ignore
           retention-days: 7
 
@@ -549,6 +596,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Upload real Live Talk postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-live-talk-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability
+          if-no-files-found: ignore
+          retention-days: 7
+
   test-web-e2e:
     name: test-web-e2e (${{ matrix.database }})
     timeout-minutes: 9
@@ -607,6 +663,15 @@ jobs:
         with:
           name: playwright-desktop-${{ matrix.database }}-attempt-${{ github.run_attempt }}
           path: web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload full-stack postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-desktop-${{ matrix.database }}-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability
           if-no-files-found: ignore
           retention-days: 7
 
@@ -711,6 +776,15 @@ jobs:
         with:
           name: playwright-redroid-${{ matrix.database }}-attempt-${{ github.run_attempt }}
           path: web/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload redroid postflight evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-observability-redroid-${{ matrix.database }}-attempt-${{ github.run_attempt }}
+          path: .tmp/e2e/observability
           if-no-files-found: ignore
           retention-days: 7
 
