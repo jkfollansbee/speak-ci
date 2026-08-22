@@ -224,6 +224,21 @@ jobs:
       - name: Run standalone mm-gateway smoke
         run: ./scripts/test-standalone-mm-gateway.sh
 
+  test-standalone-operations:
+    timeout-minutes: 9
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.CHECKOUT_REF }}
+          token: ${{ secrets.SPEAK_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Run standalone stateful operations smoke
+        run: ./scripts/test-standalone-operations.sh
+
   test-web:
     timeout-minutes: 9
     runs-on: ubuntu-latest
@@ -713,6 +728,7 @@ jobs:
       - test-api-omni-audio-e2e
       - test-proxy
       - test-standalone-mm-gateway
+      - test-standalone-operations
       - test-web
       - test-web-sites
       - test-web-base-path

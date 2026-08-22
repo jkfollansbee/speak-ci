@@ -16,6 +16,7 @@ test_jobs=(
   test-api-omni-audio-e2e
   test-proxy
   test-standalone-mm-gateway
+  test-standalone-operations
   test-web
   test-web-sites
   test-web-base-path
@@ -166,6 +167,27 @@ if ! awk '
   END { exit !found }
 ' "$workflow"; then
   echo "Standalone mm-gateway smoke job must run its source-repository smoke script" >&2
+  exit 1
+fi
+
+operations_block="$(workflow_job test-standalone-operations)"
+for mapping in \
+  'repository: ${{ env.CHECKOUT_REPOSITORY }}' \
+  'ref: ${{ env.CHECKOUT_REF }}' \
+  'token: ${{ secrets.SPEAK_REPO_TOKEN }}'; do
+  if ! grep -Fq "$mapping" <<< "$operations_block"; then
+    echo "Standalone operations smoke must preserve private source checkout mapping: $mapping" >&2
+    exit 1
+  fi
+done
+
+if ! awk '
+  /^  test-standalone-operations:[[:space:]]*$/ { in_operations = 1 }
+  in_operations && /^  [a-z0-9][a-z0-9-]*:[[:space:]]*$/ && $0 !~ /^  test-standalone-operations:/ { exit }
+  in_operations && $0 == "        run: ./scripts/test-standalone-operations.sh" { found = 1 }
+  END { exit !found }
+' "$workflow"; then
+  echo "Standalone operations smoke job must run its source-repository recovery script" >&2
   exit 1
 fi
 

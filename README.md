@@ -20,6 +20,8 @@ The workflow contains the copied `panda-lingo/speak` test, build, and publish jo
   `test-private-ci-workflow` job
 - check out `panda-lingo/speak` with `SPEAK_REPO_TOKEN`
 - run the test matrix
+- exercise the source repository's standalone PostgreSQL, VictoriaMetrics, and
+  rclone recovery smoke before images can be built or published
 - run the source repository's uncached OMNI audio-practice, pinned music-analysis,
   and voice-memo e2e contract when the mirrored `OMNI_*` settings are present
 - run the source repository's real Live Talk browser journey when the mirrored
@@ -50,7 +52,7 @@ The workflow uses a declarative timeout budget for every job:
 
 Every job must declare an integer `timeout-minutes` value from 1 through 9. The
 `quality-gate` must list every `test-*` job in `needs`, including the standalone
-`mm-gateway` deployment smoke. The contract script at
+`mm-gateway` deployment smoke and stateful recovery smoke. The contract script at
 `scripts/test-private-ci-workflow.sh` checks these mappings so a newly added job
 cannot silently bypass the timeout policy or required-result gate.
 
