@@ -41,6 +41,16 @@ Automatic behavior:
 - pushes to `main` and tags that start with `v` also publish images
 - manual runs can choose any `source_ref` from `panda-lingo/speak` and can force publishing with the `publish_image` input
 
+## Runtime-prefix verification contract
+
+The fallback workflow must build the source repository's web image without
+`NEXT_PUBLIC_API_URL` or `NEXT_PUBLIC_BASE_PATH` build overrides. The source
+image contains validated runtime tokens; its `test-web-base-path` job runs the
+source `npm run test:e2e:base-path` contract, which starts fresh containers
+from one image at both `/speak` and `/academy`. This keeps fallback CI aligned
+with the deploy-without-rebuild guarantee instead of testing a separately
+prefix-built image.
+
 ## Job timeout contract
 
 The workflow uses a declarative timeout budget for every job:

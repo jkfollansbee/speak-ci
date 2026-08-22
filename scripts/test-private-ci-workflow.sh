@@ -237,6 +237,17 @@ for browser_job in test-web-sites test-web-base-path test-web-ai-text-live test-
   fi
 done
 
+base_path_block="$(workflow_job test-web-base-path)"
+if ! grep -Fq 'npm run test:e2e:base-path' <<< "$base_path_block"; then
+  echo "Runtime-prefix browser job must run the source one-image prefix e2e contract" >&2
+  exit 1
+fi
+if grep -Eq 'NEXT_PUBLIC_(API_URL|BASE_PATH)=' <<< "$base_path_block" ||
+  grep -Eq 'NEXT_PUBLIC_(API_URL|BASE_PATH)=' "$workflow"; then
+  echo "Private CI must not override tokenized web runtime configuration at build time" >&2
+  exit 1
+fi
+
 live_api_block="$(workflow_job test-api-ai-text-live)"
 if ! grep -Fq './scripts/validate-live-ai-text-config.sh' <<< "$live_api_block"; then
   echo "Live AI API job must run the provider configuration preflight" >&2

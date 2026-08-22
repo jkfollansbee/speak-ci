@@ -377,9 +377,6 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: speak-web-subpath-e2e:local
-          build-args: |
-            NEXT_PUBLIC_API_URL=/speak/api/v1
-            NEXT_PUBLIC_BASE_PATH=/speak
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
@@ -924,8 +921,5 @@ jobs:
           push: ${{ env.PUBLISH_IMAGE == 'true' }}
           tags: ${{ steps.meta_web.outputs.tags }}
           labels: ${{ steps.meta_web.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=/speak/api/v1
-            NEXT_PUBLIC_BASE_PATH=/speak
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
